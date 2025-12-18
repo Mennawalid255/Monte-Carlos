@@ -1,0 +1,4 @@
+--patch-module
+edu.montecarlo=_
+--add-reads
+edu.montecarlo=ALL-UNNAMED

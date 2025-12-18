@@ -9,22 +9,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Parallel implementation of π estimation using ExecutorService and Futures.
- * Divides work into multiple tasks for concurrent execution.
- */
+
 public class ParallelPiEstimator implements PiEstimator {
 
-    /**
-     * Estimates π using parallel tasks.
-     * Each task generates its portion of random points independently.
-     */
     @Override
-    public double estimate(SimulationConfig config) {
-        // Create fixed thread pool
+    public double estimatePi(SimulationConfig config) {
         ExecutorService executor = Executors.newFixedThreadPool(config.getNumThreads());
 
-        // Calculate points per task
         long pointsPerTask = config.getTotalPoints() / config.getNumTasks();
         long remainder = config.getTotalPoints() % config.getNumTasks();
 
@@ -36,26 +27,21 @@ public class ParallelPiEstimator implements PiEstimator {
             futures.add(executor.submit(new MonteCarloTask(points)));
         }
 
-        // Collect results from all tasks
         long totalPointsInsideCircle = 0;
         try {
             for (Future<Long> future : futures) {
-                totalPointsInsideCircle += future.get(); // Wait for task completion
+                totalPointsInsideCircle += future.get(); 
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException("Error during parallel execution", e);
         } finally {
-            executor.shutdown(); // Clean up thread pool
+            executor.shutdown(); 
         }
 
-        // Calculate π estimate
         return 4.0 * totalPointsInsideCircle / config.getTotalPoints();
     }
 
-    /**
-     * Callable task that generates random points and counts hits inside circle.
-     * Uses ThreadLocalRandom for thread-safe random number generation.
-     */
+
     private static class MonteCarloTask implements Callable<Long> {
         private final long numPoints;
 
@@ -67,14 +53,13 @@ public class ParallelPiEstimator implements PiEstimator {
         public Long call() {
             long hitsInsideCircle = 0;
 
-            // Use ThreadLocalRandom for better performance in concurrent scenarios
+            // Use ThreadLocalRandom for better performance
             ThreadLocalRandom random = ThreadLocalRandom.current();
 
             for (long i = 0; i < numPoints; i++) {
                 double x = random.nextDouble();
                 double y = random.nextDouble();
 
-                // Check if point falls inside unit circle
                 if (x * x + y * y <= 1.0) {
                     hitsInsideCircle++;
                 }

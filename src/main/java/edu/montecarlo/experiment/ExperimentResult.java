@@ -2,36 +2,30 @@ package edu.montecarlo.experiment;
 
 import edu.montecarlo.model.SimulationConfig;
 
-/**
- * Stores results from a single π estimation experiment.
- */
+// Stores results from a single π estimation experiment
+
 public class ExperimentResult {
     private final SimulationConfig config;
-    private final double estimate;
+    private final double piEstimate;
     private final long runtimeMs;
     private final double absoluteError;
     private final String estimatorType;
 
-    public ExperimentResult(SimulationConfig config, double estimate,
-            long runtimeMs, String estimatorType, double expectedValue) {
+    public ExperimentResult(SimulationConfig config, double piEstimate,
+            long runtimeMs, String estimatorType) {
         this.config = config;
-        this.estimate = estimate;
+        this.piEstimate = piEstimate;
         this.runtimeMs = runtimeMs;
         this.estimatorType = estimatorType;
-        this.absoluteError = Math.abs(estimate - expectedValue);
-    }
-
-    public ExperimentResult(SimulationConfig config, double estimate,
-            long runtimeMs, String estimatorType) {
-        this(config, estimate, runtimeMs, estimatorType, Math.PI);
+        this.absoluteError = Math.abs(piEstimate - Math.PI);
     }
 
     public SimulationConfig getConfig() {
         return config;
     }
 
-    public double getEstimate() {
-        return estimate;
+    public double getPiEstimate() {
+        return piEstimate;
     }
 
     public long getRuntimeMs() {
@@ -48,7 +42,7 @@ public class ExperimentResult {
 
     @Override
     public String toString() {
-        return String.format("%s | %s | Est ≈ %.6f | Error: %.6f | Time: %,d ms",
-                estimatorType, config, estimate, absoluteError, runtimeMs);
+        return String.format("%s | %s | π ≈ %.6f | Error: %.6f | Time: %,d ms",
+                estimatorType, config, piEstimate, absoluteError, runtimeMs);
     }
 }

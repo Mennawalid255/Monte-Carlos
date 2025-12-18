@@ -3,21 +3,18 @@ package edu.montecarlo.gui;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
-import edu.montecarlo.model.SimulationType;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 
-/**
- * Background task for Monte Carlo simulation with real-time updates.
- * Generates random points and reports progress for visualization.
- */
+
 public class VisualizationTask extends Task<Double> {
     private final long totalPoints;
     private final boolean isParallel;
-    private final SimulationType type;
+    private final int numThreads;
     private final Consumer<PointData> pointCallback; // Called for each point generated
 
-    private long pointsInside = 0;
+    private long pointsInsideCircle = 0;
+    private long pointsProcessed = 0;
 
     /**
      * Data class for a single random point.
@@ -25,20 +22,20 @@ public class VisualizationTask extends Task<Double> {
     public static class PointData {
         public final double x;
         public final double y;
-        public final boolean inside;
+        public final boolean insideCircle;
 
-        public PointData(double x, double y, boolean inside) {
+        public PointData(double x, double y, boolean insideCircle) {
             this.x = x;
             this.y = y;
-            this.inside = inside;
+            this.insideCircle = insideCircle;
         }
     }
 
-    public VisualizationTask(long totalPoints, boolean isParallel, int numThreads, SimulationType type,
+    public VisualizationTask(long totalPoints, boolean isParallel, int numThreads,
             Consumer<PointData> pointCallback) {
         this.totalPoints = totalPoints;
         this.isParallel = isParallel;
-        this.type = type;
+        this.numThreads = numThreads;
         this.pointCallback = pointCallback;
     }
 
@@ -55,12 +52,7 @@ public class VisualizationTask extends Task<Double> {
         long endTime = System.currentTimeMillis();
         updateMessage("Completed in " + (endTime - startTime) + " ms");
 
-        double ratio = (double) pointsInside / totalPoints;
-        if (type == SimulationType.PI_ESTIMATION) {
-            return ratio * 4.0;
-        } else {
-            return ratio;
-        }
+        return 4.0 * pointsInsideCircle / totalPoints;
     }
 
     /**
@@ -70,41 +62,33 @@ public class VisualizationTask extends Task<Double> {
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
         for (long i = 0; i < totalPoints && !isCancelled(); i++) {
-            double x, y;
-            boolean inside;
-
-            if (type == SimulationType.INTEGRATION_X_SQUARED) {
-                x = random.nextDouble(); // [0, 1]
-                y = random.nextDouble(); // [0, 1]
-                inside = y < x * x;
-            } else {
-                x = random.nextDouble() * 2 - 1; // [-1, 1]
-                y = random.nextDouble() * 2 - 1; // [-1, 1]
-                inside = x * x + y * y <= 1.0;
-            }
+            // Generate points in [-1, 1] x [-1, 1] centered at origin
+            double x = random.nextDouble() * 2 - 1; // Range: [-1, 1]
+            double y = random.nextDouble() * 2 - 1; // Range: [-1, 1]
+            boolean inside = (x * x + y * y <= 1.0); // Unit circle check
 
             if (inside) {
-                pointsInside++;
+                pointsInsideCircle++;
             }
+            pointsProcessed++;
 
             // Update visualization for every point (for smaller datasets)
+            // Or sample every Nth point for larger datasets
             if (totalPoints < 10000 || i % (totalPoints / 10000) == 0) {
                 PointData point = new PointData(x, y, inside);
                 Platform.runLater(() -> pointCallback.accept(point));
 
-                // Add delay for animation effect
+                // Add delay for animation effect (real-time visualization)
                 if (totalPoints <= 5000) {
-                    Thread.sleep(1);
+                    Thread.sleep(1); // 1ms delay for smooth animation
                 }
             }
 
             // Update progress
             if (i % 1000 == 0) {
                 updateProgress(i, totalPoints);
-                double currentEstimate = (double) pointsInside / (i + 1);
-                if (type == SimulationType.PI_ESTIMATION) currentEstimate *= 4.0;
-                
-                updateMessage(String.format("Est ≈ %.6f (%,d / %,d points)",
+                double currentEstimate = 4.0 * pointsInsideCircle / (i + 1);
+                updateMessage(String.format("π ≈ %.6f (%,d / %,d points)",
                         currentEstimate, i + 1, totalPoints));
             }
         }
@@ -118,30 +102,22 @@ public class VisualizationTask extends Task<Double> {
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
         for (long i = 0; i < totalPoints && !isCancelled(); i++) {
-            double x, y;
-            boolean inside;
-
-            if (type == SimulationType.INTEGRATION_X_SQUARED) {
-                x = random.nextDouble();
-                y = random.nextDouble();
-                inside = y < x * x;
-            } else {
-                x = random.nextDouble() * 2 - 1;
-                y = random.nextDouble() * 2 - 1;
-                inside = x * x + y * y <= 1.0;
-            }
+            // Generate points in [-1, 1] x [-1, 1] centered at origin
+            double x = random.nextDouble() * 2 - 1; // Range: [-1, 1]
+            double y = random.nextDouble() * 2 - 1; // Range: [-1, 1]
+            boolean inside = (x * x + y * y <= 1.0); // Unit circle check
 
             if (inside) {
-                pointsInside++;
+                pointsInsideCircle++;
             }
 
-            // Visualize sampled points
+            // Visualize sampled points (every 10th to 100th point depending on total)
             long samplingRate = Math.max(1, totalPoints / 5000);
             if (i % samplingRate == 0) {
                 PointData point = new PointData(x, y, inside);
                 Platform.runLater(() -> pointCallback.accept(point));
 
-                // Small delay for animation
+                // Small delay for animation in parallel mode
                 if (totalPoints <= 20000) {
                     Thread.sleep(1);
                 }
@@ -150,10 +126,8 @@ public class VisualizationTask extends Task<Double> {
             // Update progress periodically
             if (i % 1000 == 0) {
                 updateProgress(i, totalPoints);
-                double currentEstimate = (double) pointsInside / (i + 1);
-                if (type == SimulationType.PI_ESTIMATION) currentEstimate *= 4.0;
-
-                updateMessage(String.format("Est ≈ %.6f (%,d / %,d points)",
+                double currentEstimate = 4.0 * pointsInsideCircle / (i + 1);
+                updateMessage(String.format("π ≈ %.6f (%,d / %,d points)",
                         currentEstimate, i + 1, totalPoints));
             }
         }

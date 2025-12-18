@@ -69,29 +69,20 @@
                             <ColumnConstraints hgrow="ALWAYS" />
                         </columnConstraints>
 
-                        <Label text="Simulation Type:" GridPane.rowIndex="0" />
-                        <ComboBox fx:id="simulationTypeCombo" maxWidth="Infinity"
-                            GridPane.rowIndex="0" GridPane.columnIndex="1" />
-
-                        <Label text="Number of Points:" GridPane.rowIndex="1" />
+                        <Label text="Number of Points:" GridPane.rowIndex="0" />
                         <Spinner fx:id="pointsSpinner" editable="true"
-                            GridPane.rowIndex="1" GridPane.columnIndex="1"
+                            GridPane.rowIndex="0" GridPane.columnIndex="1"
                             maxWidth="Infinity" />
 
-                        <Label text="Execution Mode:" GridPane.rowIndex="2" />
-                        <VBox spacing="5" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                        <Label text="Execution Mode:" GridPane.rowIndex="1" />
+                        <VBox spacing="5" GridPane.rowIndex="1" GridPane.columnIndex="1">
                             <RadioButton fx:id="sequentialRadio" text="Sequential" />
                             <RadioButton fx:id="parallelRadio" text="Parallel" />
                         </VBox>
 
-                        <Label text="Number of Threads:" GridPane.rowIndex="3" />
+                        <Label text="Number of Threads:" GridPane.rowIndex="2" />
                         <Spinner fx:id="threadsSpinner" editable="true"
-                            GridPane.rowIndex="3" GridPane.columnIndex="1"
-                            maxWidth="Infinity" />
-
-                        <Label text="Number of Trials:" GridPane.rowIndex="4" />
-                        <Spinner fx:id="trialsSpinner" editable="true"
-                            GridPane.rowIndex="4" GridPane.columnIndex="1"
+                            GridPane.rowIndex="2" GridPane.columnIndex="1"
                             maxWidth="Infinity" />
                     </GridPane>
 
@@ -131,7 +122,7 @@
                             <ColumnConstraints hgrow="ALWAYS" />
                         </columnConstraints>
 
-                        <Label text="Estimate:" GridPane.rowIndex="0" styleClass="result-label" />
+                        <Label text="π Estimate:" GridPane.rowIndex="0" styleClass="result-label" />
                         <Label fx:id="piEstimateLabel" text="---"
                             GridPane.rowIndex="0" GridPane.columnIndex="1"
                             styleClass="result-value" />
@@ -152,8 +143,8 @@
                             GridPane.rowIndex="3" GridPane.columnIndex="1"
                             styleClass="result-value" />
 
-                        <Label text="Actual Value:" GridPane.rowIndex="4" styleClass="result-label" />
-                        <Label fx:id="actualValueLabel" text="---"
+                        <Label text="Actual π:" GridPane.rowIndex="4" styleClass="result-label" />
+                        <Label text="3.1415926536"
                             GridPane.rowIndex="4" GridPane.columnIndex="1"
                             styleClass="result-value actual-pi" />
                     </GridPane>
@@ -180,12 +171,5 @@
             </VBox>
         </HBox>
     </center>
-
-    <!-- Bottom: Footer -->
-    <bottom>
-        <HBox styleClass="footer" alignment="CENTER" spacing="20">
-            <Label text="Monte Carlo Method: π ≈ 4 × (points inside circle) / (total points)" />
-        </HBox>
-    </bottom>
 
 </BorderPane>

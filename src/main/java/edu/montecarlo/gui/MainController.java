@@ -1,19 +1,10 @@
 package edu.montecarlo.gui;
 
 import edu.montecarlo.experiment.ExperimentResult;
-import edu.montecarlo.experiment.MultiTrialExperimentResult;
 import edu.montecarlo.experiment.PiExperimentRunner;
-import edu.montecarlo.model.MonteCarloEstimator;
-import edu.montecarlo.model.ParallelIntegrationEstimator;
-import edu.montecarlo.model.ParallelPiEstimator;
-import edu.montecarlo.model.SequentialIntegrationEstimator;
-import edu.montecarlo.model.SequentialPiEstimator;
-import edu.montecarlo.model.SimulationConfig;
-import edu.montecarlo.model.SimulationType;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.ComboBox;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -25,22 +16,15 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.paint.Color;
 
-/**
- * Controller for the Monte Carlo π Estimation GUI.
- * Handles user interactions and visualization updates.
- */
+
 public class MainController {
 
     @FXML
     private Canvas visualizationCanvas;
     @FXML
-    private ComboBox<SimulationType> simulationTypeCombo;
-    @FXML
     private Spinner<Integer> pointsSpinner;
     @FXML
     private Spinner<Integer> threadsSpinner;
-    @FXML
-    private Spinner<Integer> trialsSpinner;
     @FXML
     private RadioButton sequentialRadio;
     @FXML
@@ -59,8 +43,6 @@ public class MainController {
     private Label pointsLabel;
     @FXML
     private Label timeLabel;
-    @FXML
-    private Label actualValueLabel;
     @FXML
     private ProgressBar progressBar;
     @FXML
@@ -81,19 +63,9 @@ public class MainController {
     public void initialize() {
         // Set up spinners
         pointsSpinner.setValueFactory(
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(100, 10000000, 10000, 1000));
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(100, 1000000, 10000, 1000));
         threadsSpinner.setValueFactory(
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 32, 4, 1));
-        trialsSpinner.setValueFactory(
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 1, 1));
-
-        // Set up Simulation Type Combo
-        simulationTypeCombo.getItems().addAll(SimulationType.values());
-        simulationTypeCombo.setValue(SimulationType.PI_ESTIMATION);
-        simulationTypeCombo.setOnAction(e -> {
-            drawInitialCanvas();
-            updateActualValueLabel();
-        });
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 16, 4, 1));
 
         // Group radio buttons
         ToggleGroup group = new ToggleGroup();
@@ -106,9 +78,6 @@ public class MainController {
         sequentialRadio.setOnAction(e -> threadsSpinner.setDisable(true));
         parallelRadio.setOnAction(e -> threadsSpinner.setDisable(false));
 
-        // Update Actual Value Label
-        updateActualValueLabel();
-
         // Draw initial canvas (circle and square)
         drawInitialCanvas();
 
@@ -116,19 +85,16 @@ public class MainController {
         stopButton.setDisable(true);
 
         // Add welcome message
-        resultsTextArea.setText("Monte Carlo Simulation\n" +
+        resultsTextArea.setText("Monte Carlo π Estimation\n" +
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                "Configure parameters and click Start to begin simulation.\n");
-    }
-
-    private void updateActualValueLabel() {
-        if (actualValueLabel != null && simulationTypeCombo.getValue() != null) {
-            actualValueLabel.setText(String.format("%.10f", simulationTypeCombo.getValue().getActualValue()));
-        }
+                "Configure parameters and click Start to begin simulation.\n" +
+                "The visualization shows random points inside a unit square.\n" +
+                "Green points fall inside the circle, red points outside.\n\n" +
+                "Actual π value: " + Math.PI + "\n");
     }
 
     /**
-     * Draws the initial canvas with boundaries.
+     * Draws the initial canvas with circle and square boundaries.
      */
     private void drawInitialCanvas() {
         GraphicsContext gc = visualizationCanvas.getGraphicsContext2D();
@@ -139,43 +105,20 @@ public class MainController {
         gc.setFill(Color.WHITE);
         gc.fillRect(0, 0, width, height);
 
-        // Draw border
+        // Draw square border
         gc.setStroke(Color.BLACK);
         gc.setLineWidth(2);
         gc.strokeRect(0, 0, width, height);
 
-        SimulationType type = simulationTypeCombo.getValue();
-        if (type == SimulationType.INTEGRATION_X_SQUARED) {
-            // Draw y = x^2 curve
-            // Coordinate system: x [0, width], y [height, 0] (inverted y)
-            gc.setStroke(Color.rgb(52, 152, 219, 0.7)); // Blue
-            gc.setLineWidth(2);
-            gc.beginPath();
-            gc.moveTo(0, height);
-            
-            for (int px = 0; px <= width; px++) {
-                double x = (double) px / width; // [0, 1]
-                double y = x * x; // [0, 1]
-                double py = height - (y * height);
-                gc.lineTo(px, py);
-            }
-            gc.stroke();
-            
-            // Fill area under curve lightly
-            // gc.setFill(Color.rgb(52, 152, 219, 0.1));
-            // gc.lineTo(width, height);
-            // gc.lineTo(0, height);
-            // gc.fill();
-            
-        } else {
-            // Draw full circle (inscribed in the square)
-            gc.setStroke(Color.rgb(52, 152, 219, 0.7)); // Blue circle
-            gc.setLineWidth(2);
-            double radius = Math.min(width, height) / 2;
-            double centerX = width / 2;
-            double centerY = height / 2;
-            gc.strokeOval(centerX - radius, centerY - radius, radius * 2, radius * 2);
-        }
+        // Draw full circle (inscribed in the square)
+        gc.setStroke(Color.rgb(52, 152, 219, 0.7)); // Blue circle
+        gc.setLineWidth(2);
+        // Draw circle with center at (width/2, height/2) and radius = min(width,
+        // height)/2
+        double radius = Math.min(width, height) / 2;
+        double centerX = width / 2;
+        double centerY = height / 2;
+        gc.strokeOval(centerX - radius, centerY - radius, radius * 2, radius * 2);
     }
 
     /**
@@ -197,8 +140,7 @@ public class MainController {
         int numThreads = threadsSpinner.getValue();
 
         // Create visualization task
-        SimulationType type = simulationTypeCombo.getValue();
-        currentTask = new VisualizationTask(numPoints, isParallel, numThreads, type, this::addPoint);
+        currentTask = new VisualizationTask(numPoints, isParallel, numThreads, this::addPoint);
 
         // Bind UI to task
         progressBar.progressProperty().bind(currentTask.progressProperty());
@@ -308,30 +250,24 @@ public class MainController {
         GraphicsContext gc = visualizationCanvas.getGraphicsContext2D();
         double width = visualizationCanvas.getWidth();
         double height = visualizationCanvas.getHeight();
-        SimulationType type = simulationTypeCombo.getValue();
-        
-        double canvasX, canvasY;
-        
-        if (type == SimulationType.INTEGRATION_X_SQUARED) {
-             // point.x [0,1], point.y [0,1]
-             canvasX = point.x * width;
-             canvasY = height - (point.y * height);
-        } else {
-             // point.x [-1,1], point.y [-1,1]
-             double radius = Math.min(width, height) / 2;
-             double centerX = width / 2;
-             double centerY = height / 2;
-             canvasX = centerX + point.x * radius;
-             canvasY = centerY + point.y * radius;
-        }
+
+        // Map point from [-1,1] x [-1,1] to canvas centered at middle
+        double radius = Math.min(width, height) / 2;
+        double centerX = width / 2;
+        double centerY = height / 2;
+
+        // Scale from [-1,1] to canvas coordinates
+        // point.x in [-1, 1] maps to [centerX - radius, centerX + radius]
+        double canvasX = centerX + point.x * radius;
+        double canvasY = centerY + point.y * radius;
 
         // Draw point
-        gc.setFill(point.inside ? Color.rgb(0, 200, 0, 0.7) : Color.rgb(200, 0, 0, 0.7));
+        gc.setFill(point.insideCircle ? Color.rgb(0, 200, 0, 0.7) : Color.rgb(200, 0, 0, 0.7));
         gc.fillOval(canvasX - 1.5, canvasY - 1.5, 3, 3);
 
         // Update counters
         totalPoints++;
-        if (point.inside) {
+        if (point.insideCircle) {
             pointsInside++;
         }
 
@@ -339,12 +275,9 @@ public class MainController {
         pointsLabel.setText(String.format("%,d", totalPoints));
 
         if (totalPoints > 0) {
-            double currentEstimate = (double) pointsInside / totalPoints;
-            if (type == SimulationType.PI_ESTIMATION) currentEstimate *= 4.0;
-            
-            double actualValue = type.getActualValue();
+            double currentEstimate = 4.0 * pointsInside / totalPoints;
             piEstimateLabel.setText(String.format("%.10f", currentEstimate));
-            errorLabel.setText(String.format("%.10f", Math.abs(currentEstimate - actualValue)));
+            errorLabel.setText(String.format("%.10f", Math.abs(currentEstimate - Math.PI)));
         }
     }
 }
