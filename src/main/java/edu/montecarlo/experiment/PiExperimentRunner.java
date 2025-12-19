@@ -82,72 +82,74 @@ public class PiExperimentRunner {
     }
 
     public List<ExperimentResult> runComprehensiveExperiments(
-            long[] pointsList,
-            int[] threadCounts
-    ) {
-        List<ExperimentResult> results = new ArrayList<>();
+        long[] pointsList,
+        int[] threadCounts
+) {
+    List<ExperimentResult> results = new ArrayList<>();
 
-        PiEstimator sequentialEstimator = new SequentialPiEstimator();
-        PiEstimator parallelEstimator = new ParallelPiEstimator();
+    PiEstimator sequentialEstimator = new SequentialPiEstimator();
+    PiEstimator parallelEstimator = new ParallelPiEstimator();
 
-        System.out.println("=== Monte Carlo π Estimation Experiments ===\n");
+    for (long points : pointsList) {
 
-        for (long points : pointsList) {
-            System.out.println("Testing with " + String.format("%,d", points) + " points:");
+        // ---- Sequential baseline ----
+        SimulationConfig seqConfig = new SimulationConfig(points, 1, 1);
+        ExperimentResult seqResult =
+                runExperiment(sequentialEstimator, seqConfig, "Sequential");
 
-            // Sequential
-            SimulationConfig seqConfig = new SimulationConfig(points, 1, 1);
-            ExperimentResult seqResult =
-                    runExperiment(sequentialEstimator, seqConfig, "Sequential");
-            results.add(seqResult);
-            System.out.println("  " + seqResult);
+        results.add(seqResult);
 
-            // Parallel
-            for (int threads : threadCounts) {
-                int tasks = threads * 2;
-                SimulationConfig parConfig =
-                        new SimulationConfig(points, tasks, threads);
+        // ---- Parallel runs ----
+        for (int threads : threadCounts) {
+            int tasks = threads * 2;
+            SimulationConfig parConfig =
+                    new SimulationConfig(points, tasks, threads);
 
-                ExperimentResult parResult =
-                        runExperiment(
-                                parallelEstimator,
-                                parConfig,
-                                "Parallel(" + threads + " threads)"
-                        );
+            ExperimentResult parResult =
+                    runExperiment(
+                            parallelEstimator,
+                            parConfig,
+                            "Parallel(" + threads + " threads)"
+                    );
 
-                results.add(parResult);
+            double speedup =
+                    (double) seqResult.getRuntimeMs() / parResult.getRuntimeMs();
 
-                double speedup =
-                        (double) seqResult.getRuntimeMs() / parResult.getRuntimeMs();
+            parResult.setSpeedup(speedup);   // ✅ STORE SPEEDUP
 
-                System.out.println("  " + parResult +
-                        String.format(" | Speedup: %.2fx", speedup));
-            }
-
-            System.out.println();
+            results.add(parResult);
         }
-
-        return results;
     }
+
+    return results;
+}
 
     public void printResultsSummary(List<ExperimentResult> results) {
         System.out.println("\n=== Experiment Summary ===");
         System.out.println(String.format(
-                "%-25s | %-15s | %-12s | %-12s | %-10s",
-                "Estimator", "Points", "π Estimate", "Error", "Time (ms)"
+                "%-25s | %-15s | %-12s | %-12s | %-10s | %-8s",
+                "Estimator", "Points", "π Estimate", "Error", "Time (ms)", "Speedup"
         ));
-        System.out.println("-".repeat(90));
+        System.out.println("-".repeat(105));
 
-        for (ExperimentResult result : results) {
-            System.out.println(String.format(
-                    "%-25s | %,15d | %.10f | %.10f | %,10d",
-                    result.getEstimatorType(),
-                    result.getConfig().getTotalPoints(),
-                    result.getPiEstimate(),
-                    result.getAbsoluteError(),
-                    result.getRuntimeMs()
-            ));
-        }
+for (ExperimentResult result : results) {
+
+    String speedupStr =
+            result.getSpeedup() == null
+                    ? "-"
+                    : String.format("%.2fx", result.getSpeedup());
+
+    System.out.println(String.format(
+            "%-25s | %,15d | %.10f | %.10f | %,10d | %-8s",
+            result.getEstimatorType(),
+            result.getConfig().getTotalPoints(),
+            result.getPiEstimate(),
+            result.getAbsoluteError(),
+            result.getRuntimeMs(),
+            speedupStr
+    ));
+}
+
     }
 
 

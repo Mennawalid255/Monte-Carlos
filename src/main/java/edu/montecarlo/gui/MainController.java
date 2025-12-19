@@ -113,6 +113,7 @@ public class MainController {
             errorLabel.setText(String.format("%.10f", Math.abs(pi - Math.PI)));
             timeLabel.setText(time + " ms");
 
+
             String mode = parallel ? "Parallel (" + threads + " threads)" : "Sequential";
 
             resultsTextArea.appendText(
@@ -185,17 +186,28 @@ private void handleRunExperiments() {
 
             StringBuilder batchSb = new StringBuilder();
             batchSb.append("\n=== Experiment Summary ===\n");
-            batchSb.append(String.format("%-25s | %-15s | %-12s | %-12s | %-10s\n",
-                    "Estimator", "Points", "π Estimate", "Error", "Time (ms)"));
-            batchSb.append("-".repeat(90)).append("\n");
+batchSb.append(String.format(
+        "%-25s | %-15s | %-12s | %-12s | %-10s | %-8s\n",
+        "Estimator", "Points", "π Estimate", "Error", "Time (ms)", "Speedup"
+));
+batchSb.append("-".repeat(105)).append("\n");
+
 
             for (ExperimentResult result : batchResults) {
-                batchSb.append(String.format("%-25s | %,15d | %.10f | %.10f | %,10d\n",
+                String speedupStr =
+                result.getSpeedup() == null
+                    ? "-"
+                    : String.format("%.2fx", result.getSpeedup());
+                batchSb.append(String.format("%-25s | %,15d | %.10f | %.10f | %,10d | %-8s\n" +
+                                        "",
                         result.getEstimatorType(),
                         result.getConfig().getTotalPoints(),
                         result.getPiEstimate(),
                         result.getAbsoluteError(),
-                        result.getRuntimeMs()));
+                        result.getRuntimeMs(),
+                        speedupStr
+                    
+                    ));
             }
 
             Platform.runLater(() -> resultsTextArea.appendText(batchSb.toString()));

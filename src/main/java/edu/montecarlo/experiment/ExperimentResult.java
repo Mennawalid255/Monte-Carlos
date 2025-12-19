@@ -13,6 +13,7 @@ public class ExperimentResult {
     private final long runtimeMs;
     private final double absoluteError;
     private final String estimatorType;
+    private Double speedup;  
 
 
     private double averageError = 0.0;
@@ -44,6 +45,10 @@ public class ExperimentResult {
     public double getAbsoluteError() {
         return absoluteError;
     }
+    
+    public Double getSpeedup() {
+    return speedup;
+    }
 
     public String getEstimatorType() {
         return estimatorType;
@@ -56,7 +61,10 @@ public class ExperimentResult {
     public List<ExperimentResult> getTrialResults() {
         return trialResults;
     }
-
+    
+    public void setSpeedup(Double speedup) {
+    this.speedup = speedup;
+    }
 
     public void setAverageError(double averageError) {
         this.averageError = averageError;
